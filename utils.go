@@ -5,9 +5,8 @@ import (
 )
 
 const (
-	winWidth     = 800
-	winHeight    = 600
-	Degree_Shift = 0.01
+	winWidth  = 800
+	winHeight = 600
 )
 
 type color struct {

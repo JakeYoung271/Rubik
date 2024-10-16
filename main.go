@@ -14,40 +14,16 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-type cube struct {
-	sides [6]*side
-}
-
-func (c *cube) getVisibleSides(vector point) (visible, toCleanUp []*side) {
-	visible = []*side{}
-	toCleanUp = []*side{}
-	for _, s := range c.sides {
-		// fmt.Println("checking side: ", s.side_color, s.was_visible)
-		if s.center.dot(vector) > 0 {
-			s.setVisible(true)
-			visible = append(visible, s)
-		} else if s.setVisible(false) {
-			toCleanUp = append(toCleanUp, s)
-		}
-	}
-	return
-}
+// type cube struct {
+// 	sides [6]*side
+// }
 
 func main() {
-
-	side1 := newSide(Green, point{1, 0, 0})
-	side2 := newSide(Red, point{0, 1, 0})
-	side3 := newSide(White, point{0, 0, 1})
-	side4 := newSide(Blue, point{-1, 0, 0})
-	side5 := newSide(Orange, point{0, -1, 0})
-	side6 := newSide(Yellow, point{0, 0, -1})
-
-	fmt.Println(side1.getEdges())
-
-	fmt.Println(byte(Orange.hex>>24), byte(Orange.hex>>16), byte(Orange.hex>>8), byte(Orange.hex))
-
-	cube1 := cube{[6]*side{&side1, &side2, &side3, &side4, &side5, &side6}}
-	view := viewingPlane{point{1, 1, 1}, point{-1, 1, 0}, point{1, 1, -2}}
+	center_pieces := getCenterPieces()
+	corner_pieces := getCornerPieces(center_pieces)
+	edge_pieces := getEdgePieces(center_pieces)
+	rubiks_cube := rubiks_cube{corner_pieces, edge_pieces, center_pieces}
+	view := viewingPlane{point{1, 1, 1}, point{1, 1, -2}, point{-1, 1, 0}}
 	view.normalize()
 
 	// Initialize SDL
@@ -83,10 +59,9 @@ func main() {
 
 	running := true
 
-	visible, _ := cube1.getVisibleSides(view.normal)
+	visible, _ := rubiks_cube.getVisibleSides(view.normal)
 	for _, s := range visible {
-		s.setNewLines(view)
-		s.draw(pixels)
+		s.draw(pixels, view)
 	}
 	texture.Update(nil, unsafe.Pointer(&pixels[0]), winWidth*4)
 	renderer.Copy(texture, nil, nil)
@@ -149,12 +124,10 @@ func main() {
 			update = true
 		}
 		if update {
-			visible, _ := cube1.getVisibleSides(view.normal)
+			visible, _ := rubiks_cube.getVisibleSides(view.normal)
 			updatePixels(pixels, counter)
 			for _, s := range visible {
-				s.setNewLines(view)
-				s.draw(pixels)
-				s.side_lines = s.new_lines
+				s.draw(pixels, view)
 			}
 			texture.Update(nil, unsafe.Pointer(&pixels[0]), winWidth*4)
 			updates += 1
