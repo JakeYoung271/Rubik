@@ -8,6 +8,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 	"unsafe"
 
 	"github.com/veandco/go-sdl2/sdl"
@@ -91,54 +92,86 @@ func main() {
 	renderer.Copy(texture, nil, nil)
 	renderer.Present()
 
+	// for counting fps
+	frames := 1
+	updates := 1
+	last_time := time.Now()
+	key_states := [4]bool{false, false, false, false}
+
 	for counter := 0; running; counter++ {
 		update := false
+		frames += 1
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch e := event.(type) {
 			case *sdl.QuitEvent:
 				running = false
-
 			case *sdl.KeyboardEvent:
 				if e.Type == sdl.KEYDOWN { // Check for key press (not release)
 					switch e.Keysym.Sym {
 					case sdl.K_UP:
-						update = true
-						view.rotate(false, true)
-						// Add logic for up arrow press here
+						key_states[0] = true
 					case sdl.K_DOWN:
-						update = true
-						view.rotate(false, false)
-						// Add logic for down arrow press here
+						key_states[1] = true
 					case sdl.K_LEFT:
-						update = true
-						view.rotate(true, true)
-						// Add logic for left arrow press here
+						key_states[2] = true
 					case sdl.K_RIGHT:
-						update = true
-						view.rotate(true, false)
-						// Add logic for right arrow press here
+						key_states[3] = true
+					}
+				}
+				if e.Type == sdl.KEYUP { // Check for key press (not release)
+					switch e.Keysym.Sym {
+					case sdl.K_UP:
+						key_states[0] = false
+					case sdl.K_DOWN:
+						key_states[1] = false
+					case sdl.K_LEFT:
+						key_states[2] = false
+					case sdl.K_RIGHT:
+						key_states[3] = false
 					}
 				}
 			}
 		}
+		if key_states[0] {
+			view.rotate(false, true)
+			update = true
+		}
+		if key_states[1] {
+			view.rotate(false, false)
+			update = true
+		}
+		if key_states[2] {
+			view.rotate(true, true)
+			update = true
+		}
+		if key_states[3] {
+			view.rotate(true, false)
+			update = true
+		}
 		if update {
-			visible, toCleanUp := cube1.getVisibleSides(view.normal)
+			visible, _ := cube1.getVisibleSides(view.normal)
 			updatePixels(pixels, counter)
-			for _, s := range toCleanUp {
-				s.cleanup(pixels)
-			}
 			for _, s := range visible {
 				s.setNewLines(view)
 				s.draw(pixels)
 				s.side_lines = s.new_lines
 			}
 			texture.Update(nil, unsafe.Pointer(&pixels[0]), winWidth*4)
+			updates += 1
 
 		}
 		renderer.Copy(texture, nil, nil)
 		renderer.Present()
 
-		//sdl.Delay(100)
+		sdl.Delay(10)
+		if frames%100 == 0 {
+			timeDiff := time.Since(last_time).Seconds()
+			last_time = time.Now()
+			fmt.Printf("looped  %f fps \n", 100/timeDiff)
+			fmt.Printf("updated the canvase %f fps \n", float64(updates)/timeDiff)
+			frames = 0
+			updates = 0
+		}
 	}
 }
 

@@ -13,7 +13,7 @@ func (v *viewingPlane) normalize() {
 }
 
 func (v *viewingPlane) rotate(horiz, forward bool) {
-	k := 0.005
+	k := 0.02
 	if !forward {
 		k = -k
 	}
