@@ -14,16 +14,13 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
-// type cube struct {
-// 	sides [6]*side
-// }
+var view = viewingPlane{point{1, 1, 1}, point{1, 1, -2}, point{-1, 1, 0}}
 
 func main() {
 	center_pieces := getCenterPieces()
 	corner_pieces := getCornerPieces(center_pieces)
 	edge_pieces := getEdgePieces(center_pieces)
 	rubiks_cube := rubiks_cube{corner_pieces, edge_pieces, center_pieces}
-	view := viewingPlane{point{1, 1, 1}, point{1, 1, -2}, point{-1, 1, 0}}
 	view.normalize()
 
 	// Initialize SDL
@@ -61,7 +58,7 @@ func main() {
 
 	visible, _ := rubiks_cube.getVisibleSides(view.normal)
 	for _, s := range visible {
-		s.draw(pixels, view)
+		s.draw(pixels)
 	}
 	texture.Update(nil, unsafe.Pointer(&pixels[0]), winWidth*4)
 	renderer.Copy(texture, nil, nil)
@@ -72,6 +69,12 @@ func main() {
 	updates := 1
 	last_time := time.Now()
 	key_states := [4]bool{false, false, false, false}
+
+	is_turning := false
+	turning_forward := false
+	turning_axis := 0
+	turning_counter := 0
+	turning_color := Green
 
 	for counter := 0; running; counter++ {
 		update := false
@@ -103,10 +106,73 @@ func main() {
 						key_states[2] = false
 					case sdl.K_RIGHT:
 						key_states[3] = false
+					case sdl.K_f:
+						if !is_turning {
+							is_turning = true
+							turning_axis = 0
+							turning_forward = true
+							turning_counter = 0
+							turning_color = Green
+						}
+					case sdl.K_r:
+						if !is_turning {
+							is_turning = true
+							turning_axis = 1
+							turning_forward = true
+							turning_counter = 0
+							turning_color = Red
+						}
+					case sdl.K_l:
+						if !is_turning {
+							is_turning = true
+							turning_axis = 1
+							turning_forward = false
+							turning_counter = 0
+							turning_color = Orange
+						}
+					case sdl.K_u:
+						if !is_turning {
+							is_turning = true
+							turning_axis = 2
+							turning_forward = true
+							turning_counter = 0
+							turning_color = White
+						}
+					case sdl.K_d:
+						if !is_turning {
+							is_turning = true
+							turning_axis = 2
+							turning_forward = false
+							turning_counter = 0
+							turning_color = Yellow
+						}
+					case sdl.K_b:
+						if !is_turning {
+							is_turning = true
+							turning_axis = 0
+							turning_forward = false
+							turning_counter = 0
+							turning_color = Blue
+						}
 					}
 				}
 			}
 		}
+
+		if is_turning {
+			if turning_counter == 90 {
+				is_turning = false
+				turning_counter = 0
+				for _, center := range rubiks_cube.centers {
+					center.claim_corners_and_edges(rubiks_cube.corners, rubiks_cube.edges)
+				}
+			} else {
+				update = true
+				turning_counter += 1
+				rubiks_cube.rotate_side(turning_color, turning_axis, turning_forward)
+			}
+		}
+
 		if key_states[0] {
 			view.rotate(false, true)
 			update = true
@@ -123,11 +189,12 @@ func main() {
 			view.rotate(true, false)
 			update = true
 		}
+		// change back to if update
 		if update {
 			visible, _ := rubiks_cube.getVisibleSides(view.normal)
 			updatePixels(pixels, counter)
 			for _, s := range visible {
-				s.draw(pixels, view)
+				s.draw(pixels)
 			}
 			texture.Update(nil, unsafe.Pointer(&pixels[0]), winWidth*4)
 			updates += 1
@@ -137,11 +204,11 @@ func main() {
 		renderer.Present()
 
 		sdl.Delay(10)
-		if frames%100 == 0 {
+		if frames%300 == 0 {
 			timeDiff := time.Since(last_time).Seconds()
 			last_time = time.Now()
-			fmt.Printf("looped  %f fps \n", 100/timeDiff)
-			fmt.Printf("updated the canvase %f fps \n", float64(updates)/timeDiff)
+			fmt.Printf("looped at a rate of %f fps \n", 300/timeDiff)
+			fmt.Printf("updated the canvas at %f fps \n", float64(updates)/timeDiff)
 			frames = 0
 			updates = 0
 		}

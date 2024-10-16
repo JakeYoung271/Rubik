@@ -11,28 +11,25 @@ const (
 )
 
 type side struct {
-	side_color  color
-	center      point
-	edges       [4]point
-	was_visible bool
+	side_color color
+	center     point
+	edges      [4]point
+}
+
+func (s *side) rotate(axis int, forward bool) {
+	for i := 0; i < 4; i++ {
+		s.edges[i] = s.edges[i].rotated(axis, forward)
+	}
+	s.center = s.center.rotated(axis, forward)
 }
 
 func newSide(side_color color, center point) side {
 	return side{
-		side_color:  side_color,
-		center:      center,
-		was_visible: false,
-		edges:       getEdges(center),
+		side_color: side_color,
+		center:     center,
+		edges:      getEdges(center),
 	}
 }
-
-// func (s *side) setVisible(visible bool) bool {
-// 	if s.was_visible == visible {
-// 		return false
-// 	}
-// 	s.was_visible = !s.was_visible
-// 	return !visible
-// }
 
 func (s *side) displace(d_vector point) {
 	for i := 0; i < 4; i++ {
@@ -42,7 +39,7 @@ func (s *side) displace(d_vector point) {
 	}
 }
 
-func get_lines(view viewingPlane, edges [4]point) []lineSeg {
+func get_lines(edges [4]point) []lineSeg {
 	var vertices [4]pixel
 	for i := 0; i < 4; i++ {
 		x, y := mapToPixel(edges[i], view, X_WIDTH, Y_WIDTH)
@@ -52,9 +49,9 @@ func get_lines(view viewingPlane, edges [4]point) []lineSeg {
 	return lines
 }
 
-func (s *side) draw(pixels []byte, view viewingPlane) {
+func (s *side) draw(pixels []byte) {
 
-	lines := get_lines(view, s.edges)
+	lines := get_lines(s.edges)
 
 	minX, maxX := winWidth, 0
 	for i := range lines {
