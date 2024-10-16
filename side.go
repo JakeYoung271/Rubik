@@ -4,6 +4,12 @@ import (
 	"math"
 )
 
+const (
+	HALF_SIDE_WIDTH = 1
+	X_WIDTH         = 8
+	Y_WIDTH         = 6
+)
+
 type side struct {
 	side_color  color
 	center      point
@@ -39,7 +45,7 @@ func (s *side) displace(d_vector point) {
 func get_lines(view viewingPlane, edges [4]point) []lineSeg {
 	var vertices [4]pixel
 	for i := 0; i < 4; i++ {
-		x, y := mapToPixel(edges[i], view, 8, 6)
+		x, y := mapToPixel(edges[i], view, X_WIDTH, Y_WIDTH)
 		vertices[i] = pixel{x, y}
 	}
 	_, _, lines := getEquations(vertices)
@@ -95,16 +101,16 @@ func getEdges(center point) [4]point {
 	for i := 0; i < 4; i++ {
 		if fixX {
 			result[i].x = center.x
-			result[i].y = math.Pow(-1, float64(i/2))
-			result[i].z = math.Pow(-1, float64(i%2))
+			result[i].y = HALF_SIDE_WIDTH * math.Pow(-1, float64(i/2))
+			result[i].z = HALF_SIDE_WIDTH * math.Pow(-1, float64(i%2))
 		} else if fixY {
 			result[i].y = center.y
-			result[i].x = math.Pow(-1, float64(i/2))
-			result[i].z = math.Pow(-1, float64(i%2))
+			result[i].x = HALF_SIDE_WIDTH * math.Pow(-1, float64(i/2))
+			result[i].z = HALF_SIDE_WIDTH * math.Pow(-1, float64(i%2))
 		} else {
 			result[i].z = center.z
-			result[i].x = math.Pow(-1, float64(i/2))
-			result[i].y = math.Pow(-1, float64(i%2))
+			result[i].x = HALF_SIDE_WIDTH * math.Pow(-1, float64(i/2))
+			result[i].y = HALF_SIDE_WIDTH * math.Pow(-1, float64(i%2))
 		}
 	}
 	return result
